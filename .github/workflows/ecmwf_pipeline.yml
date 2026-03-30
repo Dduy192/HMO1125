@@ -1,0 +1,36 @@
+name: ECMWF Full Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install system and python dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+          pip install ecmwf-opendata xarray cfgrib matplotlib
+
+      - name: Run plot script
+        run: python plot_ecmwf.py
+
+      - name: Clean up raw data
+        run: rm -f data.grib2
+
+      - name: Commit and push plot to repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/latest_plot.png
+          git commit -m "Update ECMWF plot" || exit 0
+          git push
